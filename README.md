@@ -1,5 +1,8 @@
-This document describes/defines FILL-THIS-OUT in the [Virtual
-Observatory](https://ivoa.net)
+This is Simple Cone Search version 2, a major revision of the [Virtual
+Observatory](https://ivoa.net) protocol SCS.  It is intended to offer
+a way to publish astronomical catalogues requiring only a modest effort
+(compared to a full-fledged TAP service) and yet covering some common
+use cases.
 
 Stable versions of this document are available through the [IVOA
 document repository](http://ivoa.net/documents/).

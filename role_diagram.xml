@@ -1,0 +1,11 @@
+<archdiag xmlns="http://ivoa.net/archdiag">
+  <rec name="VODataService" x="57.5" y="350" w="85"/>
+  <rec name="VOTable" x="270" y="325" w="50"/>
+  <rec name="DALI" x="310" y="290" w="33"/>
+
+  <rec name="ConeSearch" x="665.5" y="155" w="69"/>
+  <thisrec name="SCS2" x="686" y="180" w="32"/>
+  <rec name="TAP" x="686" y="280" w="28"/>
+  <rec name="DataLink" x="628" y="405" w="53"/>
+  <rec name="UCD" x="189" y="310" w="32"/>
+</archdiag>

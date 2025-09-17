@@ -2,16 +2,18 @@
 \input tthdefs
 \input gitmeta
 
-\title{???? Full title ????}
+\usepackage{todonotes}
+
+\title{IVOA SCS: Simple Cone Searches for Astronomical Catalogues}
 
 % see ivoatexDoc for what group names to use here; use \ivoagroup[IG] for
 % interest groups.
-\ivoagroup{???? group ????}
+\ivoagroup{DAL}
 
-\author[????URL????]{????Alfred Usher Thor????}
-\author{????Fred Offline????}
+\author[https://wiki.ivoa.net/twiki/bin/view/IVOA/MarkusDemleitner]{
+  Markus Demleitner}
 
-\editor{????Alfred Usher Thor????}
+\editor{Markus Demleitner}
 
 % \previousversion[????URL????]{????Concise Document Label????}
 \previousversion{This is the first public release}
@@ -19,13 +21,14 @@
 
 \begin{document}
 \begin{abstract}
-???? Abstract ????
+The Simple Cone Search Protocol is an IVOA protocol to facilitate
+publishing and querying astronomical catalogues.  This document defines
+query parameters, response formats, and metadata standards.  It defines
+version 2 of this protocol, which is incompatible with the IVOA's SCS
+version 1 protocol.  We also give some guidance on transitioning between
+the two major versions.
 \end{abstract}
 
-
-\section*{Acknowledgments}
-
-???? Or remove the section header ????
 
 \section*{Conformance-related definitions}
 
@@ -44,7 +47,35 @@ infrastructure that enable VO applications.
 
 \section{Introduction}
 
-???? Write something ????
+In 2008, Simple Cone Search (SCS) version 1 \citep{2008ivoa.specQ0222P}
+was one of the first standards in the Virtual Observatory to gain
+significant traction; there was a standardised way to query astronomical
+catalogues -- tabular data with celestial positions and a simple primary
+key -- across data centres.
+
+In addition to taking up previous standards efforts, it was exploring
+various technologies, such as simple data model annotation using UCDs,
+bespoke error reproting pattersn, and metadata extensions for the VO
+Registry; at least within the VO, this was all breaking new ground.
+
+Not surprisingly, in the 18 years since SCS1, many of these approaches
+turned out to be insufficient; in particular the completely outdated
+form of SCS1's UCDs make it stick out like a sore thumb in today's
+Virtual Observatory.  More generally, SCS should respect the general
+rules for protocols defined by the Data Access Layer Working Group, DALI
+\citep{2017ivoa.spec.0517D}.
+
+Since SCS1's release, the Table Access Protocol TAP
+\citep{2019ivoa.spec.0927D} has been defined.  Thus, there is now a far
+superior protocol to query tabular data.  However, a nice for a cone
+search-like protocol still exists: something that, on the service side,
+can be implemented ad-hoc, and on the client side is dead simple to use
+provided you have a VOTable parser.
+
+The remainder of this document first explores the use cases in a bit
+more detail, then defines the endpoints required for an SCS2 service,
+goes on to specify the response format and concludes with considerations
+of how to register, discover, and query SCS2 services.
 
 \subsection{Role within the VO Architecture}
 
@@ -65,7 +96,242 @@ infrastructure that enable VO applications.
 Fig.~\ref{fig:archdiag} shows the role this document plays within the
 IVOA architecture \citep{2021ivoa.spec.1101D}.
 
-???? and so on, LaTeX as you know and love it. ????
+SCS2 directly makes use of the following standards:
+
+\begin{longdescription}
+\item[DALI] \citet{2017ivoa.spec.0517D} gives the basic rules all modern
+DAL protocols have to follow.  We will freely reference DALI in many
+places.  The expectation is that any DALI 1 version should yield
+compatible services.
+
+\item[VOTable] \citet{2025ivoa.spec.0116O} defines the central response
+format for SCS2 services.  Actually, most other possible response
+formats are missing metadata required for proper SCS operations; in that
+sense, there is no SCS2 without VOTable.
+
+\item[UCD] \citet{2005ivoa.spec.0819D} gives a lightweight semantic
+annotation at allows cleints to (semi-) automatically process SCS2
+results.  In contrast to its predecessory, however, SCS2 no longer uses
+UCDs to locate pieces of data relevant for protocol operation.
+
+\item[VODataService] \citet{2021ivoa.spec.1102D} is the metadata scheme
+used to register SCS2 services.
+
+\end{longdescription}
+
+SCS2 also relates to the following other VO standards
+
+\begin{bigdescription}
+\item[ConeSearch 1] \citet{2008ivoa.specQ0222P} is the incompatible
+predecessor of SCS2.  We give a plan for how to transition from it in
+this document.
+
+\item[TAP] \citet{2019ivoa.spec.0927D} is the IVOA's protocol for
+running advanced queries against tables of all sorts.  Its existence
+allows us to ignore more advanced use cases by defering them to TAP.
+
+\item[DataLink] \citet{2023ivoa.spec.1215B} offers a mechanism to link
+advanced data products, in particular parts of a catalogue row's
+provenance chain, to rows returned by SCS2.
+\end{bigdescripton}
+
+\section{Use Cases}
+
+\subsection{Consumer Use Case}
+
+SCS2 is driven by the main use case: Researchers wants to retrieve a
+full astronomical catalogue or parts of it and immediately start working
+with it, without having to write importing software, and ideally with
+support in quickly adapting to different catalogues.  The basic
+specification of what part of a catalogue is by position; being able to
+formulate further simple constraints is a nice extra, but SCS2 does not
+attempt to compete with TAP.
+
+A related second use case is: Researchers want to locate a catalogue
+with certain properties (e.g., the presence of a column covering a
+certain sort of physics, some limiting magnitude, spatial or spectral
+coverage).  On finding a matching resource, they can immediately access
+data pertaining to their research (and preferably not terribly much
+more).
+
+To briefly map these use cases to features covered by this standard:
+
+\begin{itemize}
+\item Immediately start working: VOTable response format
+\item Positional contraint: The mandatory RA, DEC, SR parameters
+\item Other parts of catalogues: The possibility to declare further
+parameters and their standard DALI interval syntax
+\item Locate a catalogue: Our use of the VO Registry, including
+registering tablesets containing UCDs.
+\end{itemize}
+
+
+\subsection{Operator Use Case}
+
+A data publisher wants to make one or more catalogues accessible to the
+scientific public with minimal effort while still satisfying the
+consumer use case.
+
+This important part in this use case is ``with minimal effort''.
+Without this requirement, TAP would be the protocol to choose, and data
+providers are urged to see whether they can adapt one of the existing
+TAP/ADQL implementations.  However, implementing TAP and ADQL is a major
+effort.  SCS2's goal is to be implementable within a week or so even
+without a relational database.
+
+\section{Endpoints}
+
+SCS2 is what DALI \citep{2017ivoa.spec.0517D} calls a ``concrete service
+specification''.  As envisioned in DALI, we will only reference DALI
+sections where they apply unchanged.  The references are for DALI 1.2.
+
+All SCS2 services must implement three endpoints with the names given
+here:
+
+\begin{itemize}
+\item \verb|<base-url>/scs2| -- synchronous query.  This is the query
+endpoint further specified below.  Its full URL is what is registered as
+``service URL''.  All parameters on this endpoint are case-sensitive.
+
+\item \verb|<base-url>/capabilities| -- VOSI capabilities as per DALI
+sect.~2.5.  This must describe the SCS2 and VOSI capabilities but may
+contain arbitrary other capabilities.
+
+\item \verb|<base-url>/tables| -- VOSI tables as per DALI sect.~2.6.
+The names of all tables in the tableset returned must work as values for
+the TABLE parameter of the SCS2 endpoint.
+\end{itemize}
+
+Note that this scheme in particular means that a client can reliably
+infer the URL of the VOSI capabilities by computing the sibling of the
+service URL named ``capabilities''.
+
+\section{Parameters in SCS2}
+
+SCS2 services are required to fail when requests pass parameters they do
+not support, regardless of whether values are bound to these parameters
+or not.
+
+\subsection{Standard Parameters}
+
+As in SCS1, SCS2 services must support positional constraints.  They are
+given as a ``cone'', i.e., a centre and a search radius.  The following
+parameters -- backwards-compatible with SCS1 -- are required for that:
+
+\begin{description}
+\item[RA] -- a right ascension in degrees, understood to be ICRS at
+whatever epoch the catalogue is in.
+\item[DEC] -- a declination in degrees, understood to be ICRS at
+whatever epoch the catalogue is in.
+\item[SR] -- a search radius in degrees.
+\end{description}
+
+All these parameters are not repeatable.
+
+When evaluating the cone constraint, services must compute spherical
+distances to the cone center and only include objects closer to the
+centre than SR.  For non-SCS2 clients, services should declare these
+input parameters with the UCDs \ucd{pos.eq.ra}, \ucd{pos.eq.dec}, and
+\ucd{pos.angDistance}, respectively.
+
+SCS2 breaks the identity of service and catalogue that SCS1 had.
+Services therefore must support the input parameter \verb|TABLE|.  This
+is not repeatable, too.
+
+The value of TABLE is a table name taken from the tableset.  Services
+only offering access to a single table may accept requests without a
+TABLE parameter but must accept it and raise an error if the table name
+does not match what they give in their tableset.  For services
+publishing multiple tables, it is an error to not pass TABLE.
+
+All SCS2 services must support the \verb|RESPONSEFORMAT| parameter as
+per DALI sect.~4.3.3.  The only required response format is VOTable,
+where implementations are free to return any version with a major
+version number of 1.  VOTables must be selectable as with all media
+types given in DALI.  Without RESPONSEFORMAT, SCS2 services must return
+VOTable.\footnote{In other words, a totally sensible and legal
+implementation of RESPONSEFORMAT is to raise an error if anythin but
+application/x-votable+xml or text/xml is passed to it.}
+
+All SCS2 services must support the \verb|MAXREC| parameter as per DALI
+sect.~4.3.4.
+
+All SCS2 services must support a \verb|VERB| (for ``verbosity'')
+parameter, which we keep from SCS1.  Its value must be one of 1, 2, or
+3.  When the value is 1, the response should include the bare minimum of
+columns that convey some basic information kept in the catalogue.  When
+the value is 3, the service should return all columns making up the
+underlying table.  A value of 2 requests the columns considered by the
+provider to be most typically useful to the user.   It is legal to
+always return the same set of columns independent of the value of VERB.
+
+SCS2 service may support a POS parameter as defined by SIAP2
+\citep{2015ivoa.spec.1223D}, except that for SCS2, tihs is a
+non-repeatable parameter.
+
+SCS2 services may support an \texttt{UPLOAD} parameter as per DALI
+sect.~4.3.5.  Only a single table in VOTable format may be uploaded, and
+its columsn must be named RA, DEC, and SR.  Services implementing UPLOAD
+must produce a VOTable with a single result table containing the union
+of a series of SCS queries with the cones defined by the rows of the
+uploaded table.  Duplicate rows are not allowed.  Table uploads from
+http(s) URIs and inline uploads must be supported.
+
+\subsection{Free Parameters}
+
+Services may offer additional query parameters to allow clients to
+communicate further constraints.  To constrain float-like parameters,
+use interval-typed input parameters as per DALI sect.~3.4.
+
+Services should name the parameters like the table columns they
+constrain.  If at all possible, names of free parameters should be in
+all-lower case.  This is to make them reliably distinct from protocol
+parameters, which are always upper case; it is still stronly discouraged
+to have free parameters that after case folding clash with protocol
+parameters.
+
+
+\section{Protocol Responses}
+
+SCS2 services respond to requests as defined in DALI sect.~5.  The
+following additional requirements apply:
+
+\begin{itemize}
+\item Error responses should not use a 200 HTTP status code but instead
+4xx when the service sees a client error and a 5xx when the service
+diagnoses an error on its side.
+
+\item The media types text/xml and application/x-votable+xml are treated
+exactly equivalent by SCS2 clients and indicate a VOTable response.
+
+\item All responses, including errors, must be in VOTable unless the
+client has requested a different RESPONSEFORMAT, in which case none of
+the following constraints apply.
+
+\item Exactly one \xmlel{FIELD}, the row identifier, must have a UCD of
+\ucd{meta.id;meta.main} and must be an array of VOTable chars; this
+applies even if the original catalogue uses integer identifiers.  This
+must be suitable as a primary key, i.e., there must not be two rows
+sharing the same row identifier.
+
+\item Exactly one \xmlel{FIELD} must have a UCD of
+\ucd{pos.eq.ra;meta.main} and must be a single floating point value
+(float or double); its contents represents a right ascension in the ICRS
+frame.
+
+\item Exactly one \xmlel{FIELD} must have a UCD of
+\ucd{pos.eq.dec;meta.main} and must be a single floating point value
+(float or double); its contents represents a declination in the ICRS
+frame.
+
+\item All \xmlel{FIELD} elements must have a description, and for
+quantities with units, the units must be given in VOUnits syntax
+\citep{2014ivoa.spec.0523D}.
+
+\end{itemize}
+
+The epoch of the main position should be defined in a \xmlel{COOSYS} element.
+
 
 \appendix
 \section{Changes from Previous Versions}
