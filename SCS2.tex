@@ -145,7 +145,8 @@ with it, without having to write importing software, and ideally with
 support in quickly adapting to different catalogues.  The basic
 specification of what part of a catalogue is by position; being able to
 formulate further simple constraints is a nice extra, but SCS2 does not
-attempt to compete with TAP.
+attempt to compete with TAP.  Still, clients should be able to produce
+expressiv user interfaces to SCS2 services on the fly.
 
 A related second use case is: Researchers want to locate a catalogue
 with certain properties (e.g., the presence of a column covering a
@@ -354,11 +355,12 @@ The epoch of the main position should be defined in a \xmlel{COOSYS} element.
 SCS2 services are registered as VODataService
 \citep{2021ivoa.spec.1102D} \xmlel{vs:CatalogService} records.  They must come
 with a tableset; empty or missing \xmlel{colum/description} elements are
-not allowed in this tableset.
+not allowed in this tableset.  SCS2 services also must declare a spatial
+coverage and should declare spectral and temporal coverage as
+appropriate.
 
 Registry records of SCS2 services must have at least one capability with
 the standard id
-
 $$
 \hbox{\nolinkurl{ivo://ivoa.net/SCS2#query-2.0}}
 $$
@@ -398,12 +400,120 @@ a relationship referencing the service record.
 Note that services supporting additional free parameters will usually
 have to use pattern (1).
 
+In the second case, the auxiliary SCS2 capability will not use the
+\xmlel{cs:ConeSearch} type; at this time, we recommend a plain
+\xmlel{vr:Capability}-typed capability.  Its standardID should be
+$$
+\hbox{\nolinkurl{ivo://ivoa.net/SCS2#query-2.0-aux}}
+$$
+
 Example registry records for both scenarios are available in
 Appendix~\ref{app:examples}.
 
 
 \appendix
 \section{Usage Patterns (non-normative)}
+
+In general, it is discouraged to for clients to do registry queries
+constraining to SCS2 services when what their users presumably want is
+data discovery; see the DDC note \citet{2019ivoa.spec.0520D} for a
+discussion of service vs.~data discovery.
+
+Hence, the typical usage pattern of a science
+client\footnote{``science'' as opposed to ``infrastructure''; a
+validator might have every reason to look exclusively for SCS2
+capabilities, for instance.} would look like this:
+
+\begin{itemize}
+\item Perform a registry search with non-capability constraints (e.g.,
+on keywords, UCDs, authors).  In the query, retrieve the available
+capabilities, e.g., using \verb|ivo_string_agg| UDF.
+
+\item If there is a capability with one of SCS2's standard ids (either
+query or query-aux), offer a UI to use the service or immediately run a
+simple cone search based on the the mandatory parameters (RA, DEC, SR).
+
+\item To produce a UI, fetch the \texttt{capabilities} sibling of the
+access URL discovered.  Enumerate the capability elements with an SCS2
+standard identifier.
+
+\begin{itemize}
+\item If there is exactly one non-aux capability, expose
+the deiclared parameters to the user\footnote{At the time of writing, we
+are still missing an interoperable method to declare column statistics,
+which admittedly are important to build meainingful UIs.
+\citet{note:colstatnote} suggests a conceivable mechanism, and the
+authors expect that a similar scheme will be adopted soon in
+VODataService, at which point these statistics should be exposed to
+users or APIs.}
+
+\item If there is only one aux capability, get the access URL from that
+capability's interface element, retrieve its capabilities document and
+build the API or UI as described here.
+\end{itemize}
+\end{itemize}
+
+Against that, clients explicitly planning to have an ``SCS2 client''
+(and that is mildly discouraged) would probably want to do the
+following:
+
+\begin{itemize}
+\item Perform a registry search with all normal constraint, additionally
+constraining \verb|standard_id| in \verb|rr.capability| via
+$$
+\hbox{\verb|standard_id like 'ivo://ivoa.net/std/SCS2#query-2.%'}.$$
+Also retrieve the relationships of the matches.  The wildcard is
+necessary to match records having auxiliary capabilities; these contain
+relevant metadata like descriptions, authors, coverage, etc.  Also
+retrieve the relevant table names.
+
+\item To avoid querying the same tables multiple times, remove any
+matches with an ivoid that is also mentioned in the related resources
+(these will be the main SCS services).
+
+\item Either run simple cone queries against the services and tables
+found in this way, passing to TABLE the table name(s) discovered, or let
+users select individual services; in that latter case, try to build APIs
+with any extra parameters as above, interpreting the service's
+capabilities endpoint.
+\end{itemize}
+
+Here is an example for a RegTAP query that will yield SCS2 services
+serving temperatures that would work for this kind of SCS2 UI:
+
+\begin{lstlisting}
+SELECT ivoid, access_url, res_title, res_description,
+  related_ids
+FROM rr.capability
+  NATURAL JOIN rr.interface
+  NATURAL JOIN rr.resource as b
+  NATURAL LEFT OUTER JOIN (
+    SELECT ivo_string_agg(related_id, '###sep###') AS related_ids
+    FROM rr.relationship
+    WHERE relationship_type='isservedby'
+    GROUP BY ivoid) AS rels
+WHERE
+  standard_id LIKE 'ivo://ivoa.net/std/scs2#query-2.%'
+  AND EXISTS(SELECT 1 FROM rr.table_column AS t
+    WHERE t.ivoid=b.ivoid AND ucd='phys.temperature')
+\end{lstlisting}
+
+For clarity: Clients only wishing to do a plain cone search on a single
+service or some hand-curated subset of SCS services do not have to
+retrieve the capabilities document or do complicated elision of
+collective services or do other sorts of complex service discovery.  A
+functionality of the type ``query this list of SCS2 services for this
+particular cone'' is of course completely in the spirit of the VO.
+Still, SCS2 clients are encouraged to think more about data discovery
+than about service disovery.
+
+Also note that there is no defined way to produce a union of SCS2
+results produced querying mutliple SCS2 services.  Trivially, their
+table schemas will be different.  But one cannot even safely produce a
+union of the guaranteed columns (main identifier, RA, and Dec); for
+instance, the uniqueness requirements of the identifiers would be lost
+in this way.
+
 
 \section{Transition Plan (non-normative)}
 
@@ -426,7 +536,7 @@ No previous versions yet.
 % Use itemize environments.
 
 
-\bibliography{ivoatex/ivoabib,ivoatex/docrepo}
+\bibliography{ivoatex/ivoabib,ivoatex/docrepo,local}
 
 
 \end{document}
