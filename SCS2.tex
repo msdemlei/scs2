@@ -290,6 +290,22 @@ parameters, which are always upper case; it is still stronly discouraged
 to have free parameters that after case folding clash with protocol
 parameters.
 
+\subsection{Error Conditions with Parameters}
+
+When clients pass parameters to an SCS2 services that it does not support,
+it must respond with a 400 Bad Request HTTP status code and a DALI error
+message explaining which parameter caused the problem.
+
+When clients pass multiple values for single-valued parameters, the
+service must respond with a 400 Bad Request HTTP status and a DALI error
+message explaining what parameter was duplicated.
+
+When clients pass potentially conflicting parameters to an SCS2 service,
+such as both RA, DEC, and SR one the one side and POS on the other, or
+UPLOAD and any other positional specification, they must respond with a
+400 Bad Request HTTP status and a DALI error message explaining what
+conflict caused the error.
+
 
 \section{Protocol Responses}
 
@@ -333,7 +349,76 @@ quantities with units, the units must be given in VOUnits syntax
 The epoch of the main position should be defined in a \xmlel{COOSYS} element.
 
 
+\section{Registration of SCS2 Services}
+
+SCS2 services are registered as VODataService
+\citep{2021ivoa.spec.1102D} \xmlel{vs:CatalogService} records.  They must come
+with a tableset; empty or missing \xmlel{colum/description} elements are
+not allowed in this tableset.
+
+Registry records of SCS2 services must have at least one capability with
+the standard id
+
+$$
+\hbox{\nolinkurl{ivo://ivoa.net/SCS2#query-2.0}}
+$$
+
+Such a capability must contain exactly one interface of type
+\xmlel{vs:ParamHTTP} with its \xmlel{role} set to \emph{std}.  All
+accepted parameters, including the mandatory ones.  Even for them, empty
+or missing param/description elements are not allowed.  All non-protocol
+parameters should come with a UCD.
+
+The capability element with the SCS-2.0 \xmlel{standardID} should be of
+the type \xmlel{cs:ConeSearch} defined below.
+
+Other capabilities are allowed; in particular, the VOSI capabilities
+(which themselves are mandatory) should be declared in the registry
+record as shown in DALI, sect.~2.5.  Where the SCS2-published table is
+also published through a TAP services, an TAP auxiliary capability
+should be given as specified in \citet{2019ivoa.spec.0520D} (DDC).
+
+There are two major publication scenarios:
+
+\begin{enumerate}
+\item Where an SCS2 service publishes only a single table, publishers
+should use a single \xmlel{vs:CatalogService} record containing the
+tableset and the full capability.
+
+\item Where a data centre has multiple tables available for SCS2, and a
+generic service without extra free parameters handles them, the
+preferred scenario is to have a single \xmlel{vs:CatalogService} record
+declaring the capability, including the common parameters, as well as
+the tableset.  In addition, for each table, there is a
+\xmlel{vs:CatalogResource}-typed record with an auxiliary capability and
+a relationship referencing the service record.
+
+\end{enumerate}
+
+Note that services supporting additional free parameters will usually
+have to use pattern (1).
+
+Example registry records for both scenarios are available in
+Appendix~\ref{app:examples}.
+
+
 \appendix
+\section{Usage Patterns (non-normative)}
+
+\section{Transition Plan (non-normative)}
+
+\section{Example Documents}
+\label{app:examples}
+
+To help implementors, this document comes with several example documents:
+
+\begin{itemize}
+\item A sample response
+\item A registry record for a one-table service with custom parameters
+\item A registry record for a CatalogResource with an auxiliary SCS2
+capability and the accompanying global SCS2 service declarations.
+\end{itemize}
+
 \section{Changes from Previous Versions}
 
 No previous versions yet.
@@ -341,8 +426,6 @@ No previous versions yet.
 % Use itemize environments.
 
 
-% NOTE: IVOA recommendations must be cited from docrepo rather than ivoabib
-% (REC entries there are for legacy documents only)
 \bibliography{ivoatex/ivoabib,ivoatex/docrepo}
 
 
