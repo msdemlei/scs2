@@ -459,9 +459,11 @@ following:
 
 \begin{itemize}
 \item Perform a registry search with all normal constraint, additionally
-constraining \verb|standard_id| in \verb|rr.capability| via
-$$
-\hbox{\verb|standard_id like 'ivo://ivoa.net/std/SCS2#query-2.%'}.$$
+constraining \verb|standard_id| in \verb|rr.capability| via a constraint
+like
+\begin{lstlisting}
+standard_id like 'ivo://ivoa.net/std/SCS2#query-2.%'
+\end{lstlisting}
 Also retrieve the relationships of the matches.  The wildcard is
 necessary to match records having auxiliary capabilities; these contain
 relevant metadata like descriptions, authors, coverage, etc.  Also
@@ -516,6 +518,141 @@ in this way.
 
 
 \section{Transition Plan (non-normative)}
+
+It is the express intent of this standard to completely replace
+ConeSearch-1 in the Virtual Observatory.  Actually, prototyping the
+management of a major version transition was part of the motivation for
+producing this document.  Whether transition plans for future major
+version transitions should be part of the respective standards or should
+come as external documents (e.g., IVOA notes) remains to be seen.  For
+this prototype, however, the editor suggests that the plan should be
+part of the citable, permanent record that IVOA RECs comprise.
+
+Desiderata of the managed transition\footnote{adapted from
+\url{https://github.com/ivoa/major-version-transition}.} include
+
+\begin{itemize}
+\item Users should not see different VOs depending on which client they
+use
+\item Services should not be required to implement multiple major
+versions for longer than absolutely necessary to ensure a halfway smooth
+transition
+\item There cannot be flag days when all services must switch from
+version A to version B
+\item Clients should not be required to impement multiple major versions
+\item A client written in year Y should not break because of the
+transition before year Y+N, where N is perhaps 3 or so.
+\end{itemize}
+
+In order to attain these goals as well as possible in a global,
+federated system run with often rather minimal budgets, we propose the
+following time line; units are years, the time symbols are explained
+below.
+
+\def\ts#1{$T_\textrm{\textnormal{\footnotesize #1}}$}
+
+\begin{description}
+\item[\ts{final-WD}] When the DAL WG declares that the standard is ready
+for adoption, several major data centres start implementing and
+registering SCS2 services; in the run-up to the final WD, pledges have
+been collected from: GAVO Heidelberg Data
+Centre\todo{Further Pledges?}.
+
+\item[\ts{RFC}] RFC is started when there are SCS2 services from at
+least five different publishers.  The editors start actively soliciting
+client implementations.
+
+\item[\ts{REC}] The TCG will not promote SCS2 to REC before (at least
+basic) client implementations are available in pyVO, TOPCAT, and Aladin.
+At this point, an Erratum process is started to add a note to
+ConeSearch-1 stating that it is deprecated, but should still be offered
+even for new services for the next two years.  Clients should prefer
+SCS2 if available.
+
+A transition team is formed, consisting of members of at least three
+IVOA member projects; an ideal size would be five persons.  At least one
+member each must be sent by one of the major searchable registries and
+one of the publishers with more than 100 ConeSearch-1 services.
+
+At the beginning of the transition time, all SCS2 services must be still
+accompanied by ConeSearch-1.0 interfaces; this could be a problem for
+operators building new SCS server-side software during the transition time.
+When that situation arises, the transition team is free to apply common
+sense.
+
+\item[\ts{REC}+0.25] The transition team is ready and takes over the
+management of the erratum.
+
+\item[\ts{REC}+0.5] The ConeSearch-1 Erratum is in place.  The
+transition team starts monitoring SCS2 adoption: How many of the
+resources with ConeSearch-1 capabilites have SCS2 capabilities, too?
+How many publishers do not offer SCS2 capabilities alongside yet?  The
+transition team reports these numbers regularly to the TCG.
+
+\item[\ts{REC}+1]  After one year, the transition team starts
+approaching publishers that operate ConeSearch-1 services without SCS2
+capabilities and offers them options to either update their software or
+migrate either their data or to another software.
+
+\item[\ts{p90}] When at least 90\% of the publishers of ConeSearch-1
+services and at least 99\% of the services have SCS2 counterparts, this
+is noted on the interop list.  New versions of cone search clients
+should from now on issue warnings when ConeSearch-1 interfaces are being
+used.
+
+\item[\ts{p90}+1] At least one major data centre starts monitoring the
+use of ConeSearch-1 services and the clients that issue requests against
+them.  From this, an impact assessment is derived: how many users are on
+clients that do not know how to deal with SCS2?  What clients are these?
+The transition team should investigate means to reach out to users or
+communities with particular migraton problems, for instance by
+organising ``Migration weeks'' when several major data centres serve
+errors to ConeSearch-1 clients.
+
+The transition team continues engaging with publishers of ConeSearch-1
+services to provide SCS2 endpoints alongside of them.
+
+The transition team also prepares an IVOA note reporting on the current
+state and the transition process so far, in particular comparing the
+real run of events with this timeline.
+
+\item[\ts{p90}+3] Provided traffic on the ConeSearch-1 endpoints is
+negligible, an erratum to ConeSearch-1 is prepared stating that the
+specification is now invalid and ConeSearch-1 is no longer a supported
+IVOA protocol.  Data providers are encouraged to turn off their
+ConeSearch-1 endpoints, clients are encouraged to remove support for
+ConeSearch-1.
+
+\item[\ts{p90}+3.5] The searchable registries remove all ConeSearch-1
+capabilities from their tables.  The transition team updates its Note on
+the transition and then disbands.
+
+\end{description}
+
+Here is an explanation of the time variables used in the time line, and
+an optimistic estimate for what they might translate to:
+
+\begin{description}
+\item [\ts{final-WD}] The time of the last working draft of the SCS2
+standard; February 2026
+
+\item[\ts{RFC}] The time SCS2 RFC starts.  May 2026
+
+\item[\ts{REC}] The time the TCG passes SCS2.  November 2026
+
+\item[\ts{p90}] The time more than 90\% of the publishers of
+ConeSearch-1 services have taken up SCS2.  January 2028 (\textit{if} the
+transition team actually functions)
+
+\end{description}
+
+In this optimistic scenario, we would turn off ConeSearch-1 in the
+summer of 2031.
+
+Clearly, this idealised time line is not strictly binding; in the end,
+the transition team will have to react to how matters actually evolve.
+It is hoped that future transition plans can build upon the experiences
+made and reported by the SCS transition team.
 
 \section{Example Documents}
 \label{app:examples}
