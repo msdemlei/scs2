@@ -24,12 +24,16 @@
 
 \begin{document}
 \begin{abstract}
-The Simple Cone Search Protocol is an IVOA protocol to facilitate
-publishing and querying astronomical catalogues.  This document defines
-query parameters, response formats, and metadata standards.  It defines
-version 2 of this protocol, which is incompatible with the IVOA's SCS
-version 1 protocol.  We also give some guidance on transitioning between
-the two major versions.
+The Simple Cone Search Protocol is an IVOA protocol designed to support
+publishing astronomical catalogues to the Virtual Observatory with
+modest implementation requirements, and querying them using any language
+that has an http library and a VOTable parser.  
+
+This document defines query parameters, response formats, and metadata
+standards.  The present specification is incompatible with the IVOA's
+ConeSearch version 1 protocol.  We therefore also propose a plan for how
+to transition between the two major versions.
+
 \end{abstract}
 
 
@@ -50,35 +54,46 @@ infrastructure that enable VO applications.
 
 \section{Introduction}
 
-In 2008, Simple Cone Search (SCS) version 1 \citep{2008ivoa.specQ0222P}
+In 2008, Simple Cone Search (SCS) version 1 \citep{2008ivoa.specQ0222P}, 
+hereafter referred to as ConeSearch-1\footnote{The move in the naming
+scheme from ConeSearch-1 to SCS2 has no deeper meaning; it just follows
+the scheme established by later ``S-Protocols'' (SIAP, SSAP, SLAP\dots)},
 was one of the first standards in the Virtual Observatory to gain
 significant traction; there was a standardised way to query astronomical
 catalogues -- tabular data with celestial positions and a simple primary
 key -- across data centres.
 
 In addition to taking up previous standards efforts, it was exploring
-various technologies, such as simple data model annotation using UCDs,
-bespoke error reproting pattersn, and metadata extensions for the VO
+various technologies, such as a minimal data model annotation using UCDs,
+bespoke error reporting patterns, and metadata extensions for the VO
 Registry; at least within the VO, this was all breaking new ground.
 
-Not surprisingly, in the 18 years since SCS1, many of these approaches
+Not surprisingly, in the 18 years since ConeSearch-1, many of these approaches
 turned out to be insufficient; in particular the completely outdated
-form of SCS1's UCDs make it stick out like a sore thumb in today's
-Virtual Observatory.  More generally, SCS should respect the general
+form of ConeSearch-1's UCDs make it stick out like a sore thumb in today's
+Virtual Observatory.  But in many other respects, from error messages to
+metadata discovery, SCS should respect the general
 rules for protocols defined by the Data Access Layer Working Group, DALI
 \citep{2017ivoa.spec.0517D}.
 
-Since SCS1's release, the Table Access Protocol TAP
+Since ConeSearch-1's release, the Table Access Protocol TAP
 \citep{2019ivoa.spec.0927D} has been defined.  Thus, there is now a far
-superior protocol to query tabular data.  However, a nice for a cone
-search-like protocol still exists: something that, on the service side,
+superior protocol to query tabular data.  However, a niche for a cone
+search-like protocol still exists: something that, on the server side,
 can be implemented ad-hoc, and on the client side is dead simple to use
 provided you have a VOTable parser.
 
 The remainder of this document first explores the use cases in a bit
-more detail, then defines the endpoints required for an SCS2 service,
-goes on to specify the response format and concludes with considerations
+more detail, then defines the endpoints required for an SCS2 service and
+goes on to specify the response format.  The main part 
+concludes with considerations
 of how to register, discover, and query SCS2 services.
+This is complemented by an appendix giving recommendations on how the
+standard authors expect clients to discover and query resources with
+SCS2 interfaces (and what they would rather not see).  Finally, we
+sketch a migration plan to completely replace the ConeSearch-1 ecosystem
+in a manner that should reduce breakage in running services as much as
+possible.
 
 \subsection{Role within the VO Architecture}
 
@@ -104,8 +119,9 @@ SCS2 directly makes use of the following standards:
 \begin{bigdescription}
 \item[DALI] \citet{2017ivoa.spec.0517D} gives the basic rules all modern
 DAL protocols have to follow.  We will freely reference DALI in many
-places.  The expectation is that any DALI 1 version should yield
-compatible services.
+places.  The expectation is that any minor version of DALI 1 should yield
+compatible services, although chapter-sharp references in this document
+will only be accurate for the exact version DALI 1.2.
 
 \item[VOTable] \citet{2025ivoa.spec.0116O} defines the central response
 format for SCS2 services.  Actually, most other possible response
@@ -113,10 +129,9 @@ formats are missing metadata required for proper SCS operations; in that
 sense, there is no SCS2 without VOTable.
 
 \item[UCD] \citet{2005ivoa.spec.0819D} gives a lightweight semantic
-annotation at allows cleints to (semi-) automatically process SCS2
-results.  In contrast to its predecessory, however, SCS2 no longer uses
-UCDs to locate pieces of data relevant for protocol operation.
-
+annotation at allows clients to (semi-) automatically process SCS2
+results.
+ 
 \item[VODataService] \citet{2021ivoa.spec.1102D} is the metadata scheme
 used to register SCS2 services.
 
@@ -149,12 +164,13 @@ support in quickly adapting to different catalogues.  The basic
 specification of what part of a catalogue is by position; being able to
 formulate further simple constraints is a nice extra, but SCS2 does not
 attempt to compete with TAP.  Still, clients should be able to produce
-expressiv user interfaces to SCS2 services on the fly.
+expressive user interfaces for SCS2 services on the fly.
 
 A related second use case is: Researchers want to locate a catalogue
 with certain properties (e.g., the presence of a column covering a
 certain sort of physics, some limiting magnitude, spatial or spectral
-coverage).  On finding a matching resource, they can immediately access
+coverage).  On finding a matching resource, they can immediately
+retrieve
 data pertaining to their research (and preferably not terribly much
 more).
 
@@ -234,28 +250,30 @@ All these parameters are not repeatable.
 
 When evaluating the cone constraint, services must compute spherical
 distances to the cone center and only include objects closer to the
-centre than SR.  For non-SCS2 clients, services should declare these
+centre than SR.  For the benefit of 
+non-SCS2 clients, services should declare these
 input parameters with the UCDs \ucd{pos.eq.ra}, \ucd{pos.eq.dec}, and
 \ucd{pos.angDistance}, respectively.
 
 SCS2 breaks the identity of service and catalogue that SCS1 had.
 Services therefore must support the input parameter \verb|TABLE|.  This
-is not repeatable, too.
+is not repeatable, either.
 
-The value of TABLE is a table name taken from the tableset.  Services
+The value of \verb|TABLE| is a table name taken from the tableset.  Services
 only offering access to a single table may accept requests without a
-TABLE parameter but must accept it and raise an error if the table name
+\verb|TABLE| parameter but must accept it and raise an error if the table name
 does not match what they give in their tableset.  For services
-publishing multiple tables, it is an error to not pass TABLE.
+publishing multiple tables, it is an error to not pass \verb|TABLE|.
 
 All SCS2 services must support the \verb|RESPONSEFORMAT| parameter as
 per DALI sect.~4.3.3.  The only required response format is VOTable,
 where implementations are free to return any version with a major
 version number of 1.  VOTables must be selectable as with all media
-types given in DALI.  Without RESPONSEFORMAT, SCS2 services must return
+types given in DALI.  Without \verb|RESPONSEFORMAT|, SCS2 services must return
 VOTable.\footnote{In other words, a totally sensible and legal
-implementation of RESPONSEFORMAT is to raise an error if anythin but
-application/x-votable+xml or text/xml is passed to it.}
+implementation of \texttt{RESPONSEFORMAT} is to raise an error if anything but
+application/x-votable+xml or text/xml is passed to it and ignore the
+parameter otherwise.}
 
 All SCS2 services must support the \verb|MAXREC| parameter as per DALI
 sect.~4.3.4.
@@ -267,15 +285,17 @@ columns that convey some basic information kept in the catalogue.  When
 the value is 3, the service should return all columns making up the
 underlying table.  A value of 2 requests the columns considered by the
 provider to be most typically useful to the user.   It is legal to
-always return the same set of columns independent of the value of VERB.
+always return the same set of columns independent of the value of 
+\verb|VERB|.
 
-SCS2 service may support a POS parameter as defined by SIAP2
-\citep{2015ivoa.spec.1223D}, except that for SCS2, tihs is a
+SCS2 service may support a \verb|POS| parameter as defined by SIAP2
+\citep{2015ivoa.spec.1223D}, except that for SCS2, this is a
 non-repeatable parameter.
 
 SCS2 services may support an \texttt{UPLOAD} parameter as per DALI
 sect.~4.3.5.  Only a single table in VOTable format may be uploaded, and
-its columsn must be named RA, DEC, and SR.  Services implementing UPLOAD
+its columsn must be named RA, DEC, and SR.  Services implementing 
+\verb|UPLOAD|
 must produce a VOTable with a single result table containing the union
 of a series of SCS queries with the cones defined by the rows of the
 uploaded table.  Duplicate rows are not allowed.  Table uploads from
@@ -325,7 +345,7 @@ diagnoses an error on its side.
 exactly equivalent by SCS2 clients and indicate a VOTable response.
 
 \item All responses, including errors, must be in VOTable unless the
-client has requested a different RESPONSEFORMAT, in which case none of
+client has requested a different \verb|RESPONSEFORMAT|, in which case none of
 the following constraints apply.
 
 \item Exactly one \xmlel{FIELD}, the row identifier, must have a UCD of
@@ -370,8 +390,9 @@ $$
 
 Such a capability must contain exactly one interface of type
 \xmlel{vs:ParamHTTP} with its \xmlel{role} set to \emph{std}.  All
-accepted parameters, including the mandatory ones.  Even for them, empty
-or missing param/description elements are not allowed.  All non-protocol
+accepted parameters, including the mandatory ones, must be declared
+within this interface element.  Even for SCS2-defined parameters, empty
+or missing param/description elements are not allowed.  All free
 parameters should come with a UCD.
 
 The capability element with the SCS-2.0 \xmlel{standardID} should be of
@@ -405,7 +426,7 @@ have to use pattern (1).
 
 In the second case, the auxiliary SCS2 capability will not use the
 \xmlel{cs:ConeSearch} type; at this time, we recommend a plain
-\xmlel{vr:Capability}-typed capability.  Its standardID should be
+\xmlel{vr:Capability}-typed capability.  Its standardID must be
 $$
 \hbox{\nolinkurl{ivo://ivoa.net/SCS2#query-2.0-aux}}
 $$
@@ -442,7 +463,7 @@ standard identifier.
 
 \begin{itemize}
 \item If there is exactly one non-aux capability, expose
-the deiclared parameters to the user\footnote{At the time of writing, we
+the declared parameters to the user\footnote{At the time of writing, we
 are still missing an interoperable method to declare column statistics,
 which admittedly are important to build meainingful UIs.
 \citet{note:colstatnote} suggests a conceivable mechanism, and the
@@ -461,7 +482,7 @@ Against that, clients explicitly planning to have an ``SCS2 client''
 following:
 
 \begin{itemize}
-\item Perform a registry search with all normal constraint, additionally
+\item Perform a registry search with all normal constraints, additionally
 constraining \verb|standard_id| in \verb|rr.capability| via a constraint
 like
 \begin{lstlisting}
@@ -513,7 +534,7 @@ Still, SCS2 clients are encouraged to think more about data discovery
 than about service disovery.
 
 Also note that there is no defined way to produce a union of SCS2
-results produced querying mutliple SCS2 services.  Trivially, their
+results produced querying multiple SCS2 services.  Trivially, their
 table schemas will be different.  But one cannot even safely produce a
 union of the guaranteed columns (main identifier, RA, and Dec); for
 instance, the uniqueness requirements of the identifiers would be lost
@@ -528,7 +549,7 @@ management of a major version transition was part of the motivation for
 producing this document.  Whether transition plans for future major
 version transitions should be part of the respective standards or should
 come as external documents (e.g., IVOA notes) remains to be seen.  For
-this prototype, however, the editor suggests that the plan should be
+this prototype, however, the editor suggests that this plan should be
 part of the citable, permanent record that IVOA RECs comprise.
 
 Desiderata of the managed transition\footnote{adapted from
@@ -584,18 +605,18 @@ When that situation arises, the transition team is free to apply common
 sense.
 
 \item[\ts{REC}+0.25] The transition team is ready and takes over the
-management of the erratum.
+management of the Erratum.
 
-\item[\ts{REC}+0.5] The ConeSearch-1 Erratum is in place.  The
+\item[\ts{REC}+0.5] The Erratum deprecating ConeSearch-1 is in place.  The
 transition team starts monitoring SCS2 adoption: How many of the
 resources with ConeSearch-1 capabilites have SCS2 capabilities, too?
-How many publishers do not offer SCS2 capabilities alongside yet?  The
+Which publishers do not offer SCS2 capabilities alongside yet?  The
 transition team reports these numbers regularly to the TCG.
 
 \item[\ts{REC}+1]  After one year, the transition team starts
 approaching publishers that operate ConeSearch-1 services without SCS2
 capabilities and offers them options to either update their software or
-migrate either their data or to another software.
+migrate either their publishing operation to another software.
 
 \item[\ts{p90}] When at least 90\% of the publishers of ConeSearch-1
 services and at least 99\% of the services have SCS2 counterparts, this
@@ -620,7 +641,7 @@ state and the transition process so far, in particular comparing the
 real run of events with this timeline.
 
 \item[\ts{p90}+3] Provided traffic on the ConeSearch-1 endpoints is
-negligible, an erratum to ConeSearch-1 is prepared stating that the
+negligible, an Erratum to ConeSearch-1 is prepared stating that the
 specification is now invalid and ConeSearch-1 is no longer a supported
 IVOA protocol.  Data providers are encouraged to turn off their
 ConeSearch-1 endpoints, clients are encouraged to remove support for
