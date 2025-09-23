@@ -23,11 +23,11 @@ SOURCES = $(DOCNAME).tex gitmeta.tex role_diagram.pdf
 
 # List of image files to be included in submitted package (anything that
 # can be rendered directly by common web browsers)
-FIGURES = role_diagram.svg
+FIGURES = role_diagram.svg timeline.tikz.tex
 
 # List of PDF figures (figures that must be converted to pixel images to
 # work in web browsers).
-VECTORFIGURES =
+VECTORFIGURES =timeline.tikz.tex
 
 # Additional files to distribute (e.g., CSS, schema files, examples...)
 AUX_FILES =
@@ -38,6 +38,9 @@ ivoatex/Makefile:
 	@echo "*** ivoatex submodule not found.  Initialising submodules."
 	@echo
 	git submodule update --init
+
+timeline.tikz.pdf: timeline.tikz.tex
+	pdflatex -jobname=$*.tikz '\documentclass{article}\usepackage[active,tightpage]{preview}\usepackage{chronology}\PreviewEnvironment{chronology}\begin{document}\input '$<'\end{document}'
 
 test:
 	@echo "No tests defined yet"

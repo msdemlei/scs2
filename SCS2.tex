@@ -2,7 +2,10 @@
 \input tthdefs
 \input gitmeta
 
+\lstset{flexiblecolumns=true,basicstyle=\ttfamily,
+  showstringspaces=False}
 \usepackage{todonotes}
+\usepackage{chronology}
 
 \title{IVOA SCS: Simple Cone Searches for Astronomical Catalogues}
 
@@ -629,8 +632,17 @@ the transition and then disbands.
 
 \end{description}
 
+
+\begin{figure}
+\tikzfigure{timeline}
+\caption{A graphical representation of the transition from ConeSearch-1
+to SCS2 according to the optimistic scenario.}
+\label{fig:timeline}
+\end{figure}
+
 Here is an explanation of the time variables used in the time line, and
-an optimistic estimate for what they might translate to:
+an optimistic estimate for what they might translate to
+(cf.~Fig.~\ref{fig:timeline}):
 
 \begin{description}
 \item [\ts{final-WD}] The time of the last working draft of the SCS2
