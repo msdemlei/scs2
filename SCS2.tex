@@ -27,7 +27,7 @@
 The Simple Cone Search Protocol is an IVOA protocol designed to support
 publishing astronomical catalogues to the Virtual Observatory with
 modest implementation requirements, and querying them using any language
-that has an http library and a VOTable parser.  
+that has an http library and a VOTable parser.
 
 This document defines query parameters, response formats, and metadata
 standards.  The present specification is incompatible with the IVOA's
@@ -54,7 +54,7 @@ infrastructure that enable VO applications.
 
 \section{Introduction}
 
-In 2008, Simple Cone Search (SCS) version 1 \citep{2008ivoa.specQ0222P}, 
+In 2008, Simple Cone Search (SCS) version 1 \citep{2008ivoa.specQ0222P},
 hereafter referred to as ConeSearch-1\footnote{The move in the naming
 scheme from ConeSearch-1 to SCS2 has no deeper meaning; it just follows
 the scheme established by later ``S-Protocols'' (SIAP, SSAP, SLAP\dots)},
@@ -85,7 +85,7 @@ provided you have a VOTable parser.
 
 The remainder of this document first explores the use cases in a bit
 more detail, then defines the endpoints required for an SCS2 service and
-goes on to specify the response format.  The main part 
+goes on to specify the response format.  The main part
 concludes with considerations
 of how to register, discover, and query SCS2 services.
 This is complemented by an appendix giving recommendations on how the
@@ -131,7 +131,7 @@ sense, there is no SCS2 without VOTable.
 \item[UCD] \citet{2005ivoa.spec.0819D} gives a lightweight semantic
 annotation at allows clients to (semi-) automatically process SCS2
 results.
- 
+
 \item[VODataService] \citet{2021ivoa.spec.1102D} is the metadata scheme
 used to register SCS2 services.
 
@@ -234,9 +234,9 @@ or not.
 
 \subsection{Standard Parameters}
 
-As in SCS1, SCS2 services must support positional constraints.  They are
+As in ConeSearch-1, SCS2 services must support positional constraints.  They are
 given as a ``cone'', i.e., a centre and a search radius.  The following
-parameters -- backwards-compatible with SCS1 -- are required for that:
+parameters -- backwards-compatible with ConeSearch-1 -- are required for that:
 
 \begin{description}
 \item[RA] -- a right ascension in degrees, understood to be ICRS at
@@ -250,12 +250,12 @@ All these parameters are not repeatable.
 
 When evaluating the cone constraint, services must compute spherical
 distances to the cone center and only include objects closer to the
-centre than SR.  For the benefit of 
+centre than SR.  For the benefit of
 non-SCS2 clients, services should declare these
 input parameters with the UCDs \ucd{pos.eq.ra}, \ucd{pos.eq.dec}, and
 \ucd{pos.angDistance}, respectively.
 
-SCS2 breaks the identity of service and catalogue that SCS1 had.
+SCS2 breaks the identity of service and catalogue that ConeSearch-1 had.
 Services therefore must support the input parameter \verb|TABLE|.  This
 is not repeatable, either.
 
@@ -279,13 +279,13 @@ All SCS2 services must support the \verb|MAXREC| parameter as per DALI
 sect.~4.3.4.
 
 All SCS2 services must support a \verb|VERB| (for ``verbosity'')
-parameter, which we keep from SCS1.  Its value must be one of 1, 2, or
+parameter, which we keep from ConeSearch-1.  Its value must be one of 1, 2, or
 3.  When the value is 1, the response should include the bare minimum of
 columns that convey some basic information kept in the catalogue.  When
 the value is 3, the service should return all columns making up the
 underlying table.  A value of 2 requests the columns considered by the
 provider to be most typically useful to the user.   It is legal to
-always return the same set of columns independent of the value of 
+always return the same set of columns independent of the value of
 \verb|VERB|.
 
 SCS2 service may support a \verb|POS| parameter as defined by SIAP2
@@ -294,7 +294,7 @@ non-repeatable parameter.
 
 SCS2 services may support an \texttt{UPLOAD} parameter as per DALI
 sect.~4.3.5.  Only a single table in VOTable format may be uploaded, and
-its columsn must be named RA, DEC, and SR.  Services implementing 
+its columsn must be named RA, DEC, and SR.  Services implementing
 \verb|UPLOAD|
 must produce a VOTable with a single result table containing the union
 of a series of SCS queries with the cones defined by the rows of the
