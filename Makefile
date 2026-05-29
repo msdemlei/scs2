@@ -40,7 +40,7 @@ ivoatex/Makefile:
 	git submodule update --init
 
 timeline.tikz.pdf: timeline.tikz.tex
-	pdflatex -jobname=timeline '\documentclass{article}\usepackage[active,tightpage]{preview}\usepackage{chronology}\PreviewEnvironment{chronology}\begin{document}\input '$<'\end{document}'
+	pdflatex -jobname=timeline.tikz '\documentclass{article}\usepackage[active,tightpage]{preview}\usepackage{chronology}\PreviewEnvironment{chronology}\begin{document}\input '$<'\end{document}'
 
 sample-response.xml:
 	curl -s -FRA=145.1 -FDEC=-78.2 -FSR=0.01\
