@@ -885,11 +885,15 @@ IVOA member projects; an ideal size would be five persons.  At least one
 member each must be sent by one of the major searchable registries and
 one of the publishers with more than 100 ConeSearch-1 services.
 
-At the beginning of the transition time, all SCS2 services must be still
-accompanied by ConeSearch-1.0 interfaces; this could be a problem for
-operators building new SCS server-side software during the transition time.
-When that situation arises, the transition team is free to apply common
-sense.
+Operators already running a ConeSearch-1 services should keep doing so
+until the transition team declares the migration window closed, even
+while the tables are accessible through SCS2 already.
+
+While ideally, newly implemented SCS2 services should be accompanied
+by ConeSearch-1 interfaces in order to keep legacy clients viable for as
+long as possible, it is deemed acceptable that these legacy client will
+not see all the growth of the VO.  Hence, there are no requirements on
+having such interfaces in newly written server software.
 
 \item[\ts{REC}+0.25] The transition team is ready and takes over the
 management of the Erratum.
