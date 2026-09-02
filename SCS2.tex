@@ -281,10 +281,15 @@ SCS2 breaks the identity of service and catalogue that ConeSearch-1 had.
 Services therefore must support the input parameter \verb|TABLE|.  This
 is single-valued as well.
 
-The value of \verb|TABLE| is a table name taken from the tableset.  Services
-only offering access to a single table may accept requests without a
+The value of \verb|TABLE| is a table name taken from the tableset. The
+parameter value must exactly match the value of the \xmlel{name} child
+of the \xmlel{table} element.  In particular, this means that when these
+are SQL delimited identifiers, the delimiters will be part of the TABLE
+parameter's value.
+
+Services only offering access to a single table may accept requests without a
 \verb|TABLE| parameter but must accept it and raise an error if the table name
-does not match what they give in their tableset.  For services
+does not match what they give in their tablesets.  For services
 publishing multiple tables, it is an error to not pass \verb|TABLE|.
 
 For the benefit on non-SCS2 clients, services should declare TABLE with
